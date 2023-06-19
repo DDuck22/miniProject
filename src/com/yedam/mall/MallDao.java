@@ -59,6 +59,48 @@ public class MallDao {
 		return null;
 	}
 
+	// 중복확인
+	public boolean idc(String id) {
+		sql = "select * from mall_users where user_id = ?";
+		conn = Dao.getConnect();
+		try {
+			psmt = conn.prepareStatement(sql);
+			psmt.setString(1, id);
+			rs = psmt.executeQuery();
+			if (rs.next()) {
+				return true;
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+		return false;
+	}
+
+	// 등록
+	public boolean register(String id, String pw, String name, String phone, String addr) {
+		sql = "insert into mall_users (user_id, user_pw, user_name, user_phone, user_addr, user_type) "//
+				+ "values (?,?,?,?,?,2)";
+		conn = Dao.getConnect();
+		try {
+			psmt = conn.prepareStatement(sql);
+			psmt.setString(1, id);
+			psmt.setString(2, pw);
+			psmt.setString(3, name);
+			psmt.setString(4, phone);
+			psmt.setString(5, addr);
+
+			int r = psmt.executeUpdate();
+			if (r > 0) {
+				return true;
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return false;
+	}
+
 	// 관리자 메뉴
 	// 상품 추가
 	public boolean addProd(ProdVO prod) {
@@ -138,7 +180,7 @@ public class MallDao {
 	// 재고 조회
 	public List<ProdVO> stock() {
 		List<ProdVO> list = new ArrayList<>();
-		sql = "select * from mall_product order by prod_stock";
+		sql = "select * from mall_product order by prod_no";
 		conn = Dao.getConnect();
 
 		try {
@@ -227,6 +269,48 @@ public class MallDao {
 			close();
 		}
 		return false;
+	}
+
+	// 주문내역
+	public List<OrderVO> orderList() {
+		List<OrderVO> list = new ArrayList<>();
+		sql = "select * from buy_history join mall_product using (prod_no) where order_check = 0 order by buy_no";
+		conn = Dao.getConnect();
+		try {
+			psmt = conn.prepareStatement(sql);
+			rs = psmt.executeQuery();
+			while (rs.next()) {
+				OrderVO order = new OrderVO();
+				order.setBuyNo(rs.getInt("buy_no"));
+				order.setProdNo(rs.getInt("prod_no"));
+				order.setProdName(rs.getString("prod_name"));
+				order.setCnt(rs.getInt("count"));
+				order.setTotalPrice(rs.getInt("total_price"));
+				order.setDate(rs.getString("buy_date"));
+				order.setUserID(rs.getString("user_id"));
+				order.setPhone(rs.getString("phone"));
+				order.setAddr(rs.getString("addr"));
+
+				list.add(order);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return list;
+
+	}
+
+	// 발송
+	public void shoot(int buyNo) {
+		sql = "update buy_history set order_check = 1 where order_check = 0 AND buy_no = ?";
+		conn = Dao.getConnect();
+		try {
+			psmt = conn.prepareStatement(sql);
+			psmt.setInt(1, buyNo);
+			psmt.executeUpdate();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}		
 	}
 
 	// 유저 메뉴
@@ -375,24 +459,24 @@ public class MallDao {
 	}
 
 	// 구매 내역
-	public List<ProdVO> buyHistory(UserVO user) {
-		List<ProdVO> history = new ArrayList<>();
+	public List<OrderVO> buyHistory(String id) {
+		List<OrderVO> history = new ArrayList<>();
 		sql = "select * from buy_history join mall_product using (prod_no) where user_id = ?";
 		conn = Dao.getConnect();
 		try {
 			psmt = conn.prepareStatement(sql);
-			psmt.setString(1, user.getId());
+			psmt.setString(1, id);
 			rs = psmt.executeQuery();
 			while (rs.next()) {
-				ProdVO prod = new ProdVO();
-				prod.setBuyNo(rs.getInt("buy_no"));
-				prod.setNo(rs.getInt("prod_no"));
-				prod.setName(rs.getString("prod_name"));
-				prod.setCnt(rs.getInt("count"));
-				prod.setPrice(rs.getInt("total_price"));
-				prod.setDate(rs.getString("buy_date"));
+				OrderVO order = new OrderVO();
+				order.setBuyNo(rs.getInt("buy_no"));
+				order.setProdNo(rs.getInt("prod_no"));
+				order.setProdName(rs.getString("prod_name"));
+				order.setCnt(rs.getInt("count"));
+				order.setTotalPrice(rs.getInt("total_price"));
+				order.setDate(rs.getString("buy_date"));
 
-				history.add(prod);
+				history.add(order);
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -402,6 +486,23 @@ public class MallDao {
 		return history;
 	}
 
+	public boolean rc(UserVO user, int no) {
+		sql = "select * from buy_history where user_id = ? and buy_no = ?";
+		conn=Dao.getConnect();
+		try {
+			psmt=conn.prepareStatement(sql);
+			psmt.setString(1, user.getId());
+			psmt.setInt(2, no);
+			int r = psmt.executeUpdate();
+			if(r>0) {
+				return true;
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
+		return false;
+	}
 	// 리뷰 작성
 	public boolean writeReview(UserVO user, String str, int no) {
 		sql = "update buy_history set review = ?, review_date = sysdate "//
@@ -464,7 +565,7 @@ public class MallDao {
 				temp.setName(rs.getString("prod_name"));
 				temp.setReview(rs.getString("review"));
 				temp.setReviewDate(rs.getString("review_date"));
-				
+
 				list.add(temp);
 			}
 		} catch (SQLException e) {
@@ -473,4 +574,5 @@ public class MallDao {
 
 		return list;
 	}
+
 }

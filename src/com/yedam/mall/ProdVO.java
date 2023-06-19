@@ -36,15 +36,5 @@ public class ProdVO {
 		);
 	}
 
-	public void showHistory() {
-		System.out.println("---------------------------------------");
-		System.out.println(//
-				"상품번호: " + this.no //
-				+ "   상품명: " + this.name //
-				+ "   구매일자: " + this.date//
-				+ "\n구매번호: " + this.buyNo//
-				+ "   구매개수: " + this.cnt+"개"//
-				+ "   총 가격: " + this.price//
-				);
-	}
+	
 }
