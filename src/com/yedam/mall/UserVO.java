@@ -14,6 +14,7 @@ public class UserVO {
 	private int buyNo;
 
 	public void showReview() {
+		System.out.println("---------------------------------------");
 		System.out.println("작성자: " + this.id + "  작성일자: " + this.reviewDate);
 		System.out.println("내용: " + this.review);
 	}

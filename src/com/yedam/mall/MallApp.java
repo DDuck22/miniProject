@@ -122,6 +122,7 @@ public class MallApp {
 
 	// 재고조회
 	public void showStock() {
+		System.out.println("---------------------------------------");
 		List<ProdVO> list = dao.stock();
 		if (list.size() == 0) {
 			System.out.println("조회결과 없음");
